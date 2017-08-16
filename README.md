@@ -1,0 +1,2 @@
+# MavenPractice
+some maven practice
