@@ -1,0 +1,334 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>zgc.pom.test</groupId>
+    <artifactId>hellomaven</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <name>hellomaven</name>
+    <!--默认为jar,还有war方式，打包方式不一样-->
+    <packaging>jar</packaging>
+    <!--
+        该元素不可以直接指定，由插件来决定
+        <classifier></classifier>
+    -->
+
+
+    <properties>
+        <!--指定build的编码格式-->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!--代码指定跳过测试设置为true 不推荐-->
+        <skipTests>false</skipTests>
+        <p1>11111</p1>
+    </properties>
+    <dependencies>
+        <!--junit单元测试-->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.7</version>
+            <!--scope test 表示该依赖仅对测试模块有效-->
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <profiles>
+        <profile>
+            <!-- 资源过滤准备 -->
+            <id>dev</id>
+            <properties>
+                <conf.id>id_dev</conf.id>
+                <conf.name>name_dev</conf.name>
+            </properties>
+            <activation>
+                <!--默认开启这个profile的配置 -->
+                <activeByDefault>true</activeByDefault>
+            </activation>
+        </profile>
+        <profile>
+            <id>prd</id>
+            <properties>
+                <conf.id>id_prd</conf.id>
+                <conf.name>name_prd</conf.name>
+            </properties>
+        </profile>
+    </profiles>
+    <build>
+        <!--资源目录 开启资源过滤-->
+        <resources>
+            <resource>
+                <directory>${project.basedir}/src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+        <!--资源目录 开启资源过滤-->
+        <testResources>
+            <testResource>
+                <directory>${project.basedir}/src/test/resources</directory>
+                <filtering>true</filtering>
+            </testResource>
+        </testResources>
+        <plugins>
+            <plugin>
+                <!--如果是maven的插件可以不写groupId-->
+                <!--<groupId>org.apache.maven.plugins</groupId>-->
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.18.1</version>
+                <configuration>
+                    <!--跳过测试,不配置该插件，命令行也可以设置参数配置跳过测试  mvn install -Dmaven.test.skip=true-->
+                    <skipTests>${skipTests}</skipTests>
+                    <includes>
+                        <!--指定符合模式的测试类进行测试,前两个**指任意包，后面*指通配符任意字符-->
+                        <include>**/*Test1.java</include>
+                        <!--<include>**/*Test_.java</include>-->
+                        <!--会覆盖默认的以Test.java结尾的测试类,所以这里在加上去-->
+                        <include>**/*Test.java</include>
+
+                    </includes>
+                    <!--修改测试报告生成的目录 ${project.build.directory} 默认为target-->
+                    <reportsDirectory>${project.build.directory}/surefire-rename-report</reportsDirectory>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <!--编译插件配置jdk1.8 的打包支持-->
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>2.3.2</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>1.2.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <transformers>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <!--借助该插件配置main class-->
+                                    <mainClass>zgc.maven.hellomaven.HelloMaven</mainClass>
+                                </transformer>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!--源码打包插件-->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <!--声明版本，避免由于版本不稳定导致构建失败（不声明版本会使用最新版本）-->
+                <version>2.1.1</version>
+                <executions>
+                    <execution>
+                        <!--任务id-->
+                        <id>attach-sources</id>
+                        <!--
+                        绑定待verify生命周期上面，不指定phase，则默认绑定到package上面
+                        使用命令查看帮助
+                        mvn help:describe -Dplugin=org.apache.maven.plugins:maven-source-plugin:2.1.1 -Ddetail
+                        -->
+                        <phase>verify</phase>
+                        <goals>
+                            <!--指定插件执行的目标-->
+                            <goal>
+                                jar-no-fork
+                            </goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.3</version>
+                <executions>
+                    <execution>
+                        <id>test-ant-taks1</id>
+                        <!--将ant run 命令绑定到validate生命周期上面-->
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <tasks>
+                                <!--执行了一句输出的语句-->
+                                <echo>test ant taks1 bound to validate phase.</echo>
+                            </tasks>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>test-ant-taks2</id>
+                        <!--将ant run 配置到了verrify生命周期阶段-->
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <tasks>
+                                <!--执行了一句输出语句-->
+                                <echo>test ant taks2 bound to validate verify.</echo>
+                            </tasks>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>2.6</version>
+                <configuration>
+                    <!--utf8处理资源文件-->
+                    <encoding>UTF-8</encoding>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>2.2</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <!--将test-jar绑定到默认打包的生命周期上,实现默认打包即可生产测试jar -->
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-site-plugin</artifactId>
+                <!--default 3.0 but has bug .so wo change it to 3.3-->
+                <version>3.3</version>
+            </plugin>
+            <!--site生产站点 最好指定projectinfo插件的版本-->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-project-info-reports-plugin</artifactId>
+                <version>2.9</version>
+            </plugin>
+            <!--自定义插件-->
+           <plugin>
+                <groupId>com.zgc.maven.plugin</groupId>
+                <artifactId>mymavenplugin</artifactId>
+                <version>1.0-SNAPSHOT</version>
+                <configuration>
+                    <!--<aliasppp>aliasppp</aliasppp>-->
+                    <includes>
+                        <include>1</include>
+                        <include>2</include>
+                    </includes>
+                </configuration>
+            </plugin>
+
+        </plugins>
+    </build>
+    <distributionManagement>
+        <site>
+            <id>www.yourcompany.com</id>
+            <url>scp://www.yourcompany.com/www/docs/project/</url>
+        </site>
+    </distributionManagement>
+    <reporting>
+        <plugins>
+            <!--选择性的生成项目站点报告 注意该插件的元素位置 <project> <reporting> <plugins>-->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-project-info-reports-plugin</artifactId>
+                <version>2.9</version>
+                <!--<reportSets>
+                    <reportSet>
+                        <reports>
+                            &lt;!&ndash;只展示项目依赖情况&ndash;&gt;
+                            &lt;!&ndash;<report>dependencies</report>&ndash;&gt;
+                        </reports>
+                    </reportSet>
+                </reportSets>-->
+            </plugin>
+            <!--生成 java doc插件-->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.7</version>
+            </plugin>
+            <!--项目源码-->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jxr-plugin</artifactId>
+                <version>2.2</version>
+                <configuration>
+                    <!--如果有多模块聚合，则使用该参数-->
+                    <aggregate>true</aggregate>
+                </configuration>
+            </plugin>
+            <!--代码风格检测报告-->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>2.5</version>
+                <configuration>
+                    <!--
+                    config/sun_checks.xml sun 定义的代码规范(默认)
+                    config/maven_checks.xml maven社区定义的代码规范
+                    config/turbine_checks.xml turbine定义的代码规范
+                    config/avalon_checks.xml avalon定义的代码规范
+                    -->
+                    <configLocation>config/maven_checks.xml</configLocation>
+                    <!--可以自定义src/main/resources/checkstyle/my-checks.xml,因为是从classpath中读取的-->
+                    <!--<configLocation>checkstyle/my-checks.xml</configLocation>-->
+                </configuration>
+            </plugin>
+            <!--源码分析工具，bug，无用代码，可优化代码-->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-pmd-plugin</artifactId>
+                <version>2.5</version>
+                <configuration>
+                    <!--指定分析规则-->
+                    <rulesets>
+                        <ruleset>rulesets/braces.xml</ruleset>
+                        <ruleset>rulesets/naming.xml</ruleset>
+                        <ruleset>rulesets/strings.xml</ruleset>
+                    </rulesets>
+                    <!--聚合报告-->
+                    <aggregate>true</aggregate>
+                </configuration>
+            </plugin>
+            <!--能够基于scm配置的版本控制信息生成三份变更报告-->
+            <!--<plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-changelog-plugin</artifactId>
+                <version>2.2</version>
+                &lt;!&ndash;默认生成最近30天的变更记录，可以自定义&ndash;&gt;
+                <configuration>
+                    <type>range</type>
+                    <range>5</range>
+                </configuration>
+            </plugin>-->
+            <!--整合测试覆盖率报告-->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>cobertura-maven-plugin</artifactId>
+                <version>2.4</version>
+            </plugin>
+        </plugins>
+    </reporting>
+    <!--scm配置信息，报告插件maven-changelog-plugin必须改配置-->
+    <!--<scm>
+        <connection>scm:svn:https://10.0.128.20/svn/BDP</connection>
+        <developerConnection>scm:svn:https://10.0.128.20/svn/BDP</developerConnection>
+        <url>https://10.0.128.20/svn/BDP</url>
+    </scm>-->
+
+</project>
